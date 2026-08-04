@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Every document in this app is owned by exactly one user and carries a
+    // `userId` field. A document is only ever readable/writable by that user.
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidOwnedCreate() {
+      return isOwner(request.resource.data.userId);
+    }
+
+    function isValidOwnedUpdate() {
+      // userId must never change hands after creation.
+      return isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /tripPreferences/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /leaveBalances/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /leaveCredits/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /holidays/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /trips/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /tripBookings/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /recommendations/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /settings/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /tatkalPlans/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /tatkalBackupOptions/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    match /tatkalPreferences/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidOwnedCreate();
+      allow update: if isValidOwnedUpdate();
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Reserved for V2 (travel document storage). Every object lives under a
+// per-user path so a user can only ever touch their own files.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
