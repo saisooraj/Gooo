@@ -100,7 +100,13 @@ export function computeAnalytics(
   let reservedLeave = 0
 
   for (const trip of yearTrips) {
-    const breakdown = classifyDateRange(trip.departureDate, trip.returnDate, holidayDates, weekend)
+    const breakdown = classifyDateRange(
+      trip.departureDate,
+      trip.returnDate,
+      holidayDates,
+      weekend,
+      new Set(trip.excludedLeaveDates ?? []),
+    )
     vacationDays += breakdown.totalDays
     weekendDaysUtilized += breakdown.weekendDays
     holidayDaysUtilized += breakdown.holidayDays

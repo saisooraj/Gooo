@@ -183,7 +183,9 @@ export function DashboardPage() {
             <path d="M9 9l2.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
           <span>Search</span>
-          <kbd className="rounded bg-white/[0.04] px-[5px] py-0.5 font-mono text-[10px] text-t3">⌘K</kbd>
+          <kbd className="hidden rounded bg-white/[0.04] px-[5px] py-0.5 font-mono text-[10px] text-t3 md:inline">
+            ⌘K
+          </kbd>
         </button>
       </div>
 

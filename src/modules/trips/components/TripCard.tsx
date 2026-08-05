@@ -12,6 +12,7 @@ import {
 import { flattenBookingForEdit, toBookingPayload } from '@/modules/transport/lib/bookingPayload'
 import type { TripBookingFormValues } from '@/modules/transport/lib/tripBooking.schema'
 import type { TripBooking } from '@/modules/transport/types/transport.types'
+import { useUpdateTrip } from '../hooks/useTrips'
 import type { Trip, TripStatus } from '../types/trip.types'
 
 const STATUS_META: Record<TripStatus, { label: string; color: string }> = {
@@ -43,6 +44,7 @@ export function TripCard({
   const createBooking = useCreateTripBooking()
   const updateBooking = useUpdateTripBooking()
   const removeBooking = useRemoveTripBooking()
+  const updateTrip = useUpdateTrip()
 
   const meta = STATUS_META[trip.status]
   const primaryBooking = bookings[0]
@@ -51,6 +53,12 @@ export function TripCard({
       ? `${primaryBooking.train.trainNumber} ${primaryBooking.train.trainName}`.trim()
       : `${primaryBooking.mode} booking`
     : 'Not booked yet'
+
+  // A trip sitting in Planning with a real, dated booking already attached is
+  // stale — the ticket is booked, the status just never caught up. Surfaced
+  // as a one-click nudge rather than auto-flipped silently on page load, so
+  // it doesn't fire for a trip mid-way through being backfilled.
+  const hasStaleBookedTicket = trip.status === 'Planning' && bookings.some((b) => Boolean(b.bookedDate))
 
   function openAddBooking() {
     setEditingBooking(null)
@@ -62,12 +70,22 @@ export function TripCard({
     setBookingSheetOpen(true)
   }
 
+  async function markTripBooked() {
+    await updateTrip.mutateAsync({ id: trip.id, data: { status: 'Booked' } })
+  }
+
   async function handleBookingSubmit(values: TripBookingFormValues) {
     const payload = toBookingPayload(values)
     if (editingBooking) {
       await updateBooking.mutateAsync({ id: editingBooking.id, data: payload })
     } else {
       await createBooking.mutateAsync(payload)
+    }
+    // Booking a ticket for a trip that was still marked Planning means it's
+    // no longer just a draft — promote it automatically so it shows up under
+    // "Upcoming" instead of silently staying in "Drafts".
+    if (payload.bookedDate && trip.status === 'Planning') {
+      await markTripBooked()
     }
     setBookingSheetOpen(false)
   }
@@ -112,6 +130,21 @@ export function TripCard({
             {expanded ? 'CLOSE' : 'VIEW'}
           </button>
         </div>
+
+        {hasStaleBookedTicket && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2">
+            <span className="text-xs text-orange">Tickets are booked — this is still marked Draft.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
+              onClick={() => void markTripBooked()}
+              disabled={updateTrip.isPending}
+            >
+              MARK BOOKED →
+            </Button>
+          </div>
+        )}
 
         {expanded && (
           <div className="mt-4 flex flex-col gap-3 border-t border-white/[0.05] pt-4">

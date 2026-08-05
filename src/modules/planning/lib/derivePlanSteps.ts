@@ -31,7 +31,13 @@ export function derivePlanSteps(
   holidayDates: ReadonlySet<DateKey>,
   weekend: WeekendConfig,
 ): DerivedPlan {
-  const breakdown = classifyDateRange(trip.departureDate, trip.returnDate, holidayDates, weekend)
+  const breakdown = classifyDateRange(
+    trip.departureDate,
+    trip.returnDate,
+    holidayDates,
+    weekend,
+    new Set(trip.excludedLeaveDates ?? []),
+  )
 
   // A trip that has moved past pure "Planning" status has had its leave locked
   // in; a trip that needs zero workdays off (fully within weekends/holidays)

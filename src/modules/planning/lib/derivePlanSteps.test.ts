@@ -90,6 +90,23 @@ describe('derivePlanSteps', () => {
     expect(result.steps.find((s) => s.id === 'leave')?.done).toBe(true)
   })
 
+  it('marks leave planned when every workday in the span is explicitly excluded', () => {
+    // Mon-Wed trip, but the only workdays are both marked as not needing leave.
+    const result = derivePlanSteps(
+      trip({
+        departureDate: '2026-10-01',
+        returnDate: '2026-10-02',
+        status: 'Planning',
+        excludedLeaveDates: ['2026-10-01', '2026-10-02'],
+      }),
+      [],
+      [],
+      NO_HOLIDAYS,
+      WEEKEND_PRESETS.SAT_SUN,
+    )
+    expect(result.steps.find((s) => s.id === 'leave')?.done).toBe(true)
+  })
+
   it('marks research done when either a booking or a tatkal plan exists', () => {
     expect(derivePlanSteps(trip(), [booking()], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).steps.find((s) => s.id === 'research')?.done).toBe(true)
     expect(derivePlanSteps(trip(), [], [tatkalPlan()], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).steps.find((s) => s.id === 'research')?.done).toBe(true)

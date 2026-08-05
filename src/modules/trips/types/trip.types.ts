@@ -18,4 +18,6 @@ export interface Trip extends FirestoreDocument {
   actualBudget?: number
   notes?: string
   recommendationId?: string
+  /** Workdays within [departureDate, returnDate] that did NOT actually require leave (e.g. an evening departure after work). */
+  excludedLeaveDates?: DateKey[]
 }

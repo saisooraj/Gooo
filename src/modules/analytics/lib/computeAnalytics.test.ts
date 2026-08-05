@@ -142,6 +142,18 @@ describe('reserved vs. consumed leave', () => {
     expect(summary.vacationDays).toBe(4)
   })
 
+  it('excludes explicitly-marked leave dates from reserved leave (e.g. an evening travel day)', () => {
+    const summary = computeAnalytics(
+      2026,
+      [],
+      [trip({ status: 'Planning', excludedLeaveDates: ['2026-01-05'] })], // Mon excluded, Tue+Wed remain
+      new Set(),
+      WEEKEND_PRESETS.SAT_SUN,
+    )
+    expect(summary.reservedLeave).toBe(2)
+    expect(summary.vacationDays).toBe(3)
+  })
+
   it('computes available-after-reservations as projected balance minus reserved leave', () => {
     const summary = computeAnalytics(
       2026,

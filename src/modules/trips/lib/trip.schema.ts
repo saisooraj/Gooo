@@ -12,6 +12,7 @@ export const tripSchema = z.object({
   estimatedBudget: z.coerce.number().min(0).optional(),
   actualBudget: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
+  excludedLeaveDates: z.array(z.string()).optional().default([]),
 })
 
 export type TripFormValues = z.output<typeof tripSchema>

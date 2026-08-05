@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { formatDisplay } from '@/utils/date'
 import type { DerivedPlan, PlanStatus } from '../lib/derivePlanSteps'
@@ -13,14 +14,23 @@ export function PlanCard({
   plan,
   onEdit,
   onDelete,
+  onMarkBooked,
+  isMarkingBooked,
 }: {
   plan: DerivedPlan
   onEdit: () => void
   onDelete: () => void
+  onMarkBooked: () => void
+  isMarkingBooked?: boolean
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const color = STATUS_COLOR[plan.status]
   const { trip } = plan
+
+  // Tickets are booked (per the checklist) but the trip's own status field
+  // never caught up — same stale-Draft gap as TripCard, surfaced here too
+  // since this is the "workspace" view of the same trip.
+  const hasStaleBookedTicket = trip.status === 'Planning' && plan.steps.find((s) => s.id === 'booked')?.done
 
   return (
     <div className="rounded-[14px] border border-white/[0.04] bg-s1 p-5">
@@ -76,6 +86,21 @@ export function PlanCard({
         {trip.origin || '—'} → {trip.destination || '—'} · {formatDisplay(trip.departureDate, 'MMM D')}–
         {formatDisplay(trip.returnDate, 'MMM D')}
       </p>
+
+      {hasStaleBookedTicket && (
+        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2">
+          <span className="text-xs text-orange">Tickets booked — still marked Draft.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
+            onClick={onMarkBooked}
+            disabled={isMarkingBooked}
+          >
+            MARK BOOKED →
+          </Button>
+        </div>
+      )}
 
       <div className="mb-3.5 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
         <div className="h-full rounded-full transition-[width]" style={{ width: `${plan.progress}%`, background: color }} />

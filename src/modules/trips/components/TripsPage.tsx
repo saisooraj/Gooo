@@ -99,7 +99,13 @@ export function TripsPage() {
       ) : filtered.length > 0 ? (
         <div className="flex flex-col gap-2.5">
           {filtered.map((trip) => {
-            const breakdown = classifyDateRange(trip.departureDate, trip.returnDate, holidayDates, weekend)
+            const breakdown = classifyDateRange(
+              trip.departureDate,
+              trip.returnDate,
+              holidayDates,
+              weekend,
+              new Set(trip.excludedLeaveDates ?? []),
+            )
             return (
               <TripCard
                 key={trip.id}
@@ -120,6 +126,8 @@ export function TripsPage() {
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editing ? 'Edit Trip' : 'Add Trip'}>
         <TripForm
           defaultValues={editing ?? undefined}
+          holidayDates={holidayDates}
+          weekend={weekend}
           onSubmit={(values) => void handleSubmit(values)}
           onCancel={() => setSheetOpen(false)}
           isSubmitting={createMutation.isPending || updateMutation.isPending}

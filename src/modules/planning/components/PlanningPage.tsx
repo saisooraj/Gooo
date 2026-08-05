@@ -101,6 +101,10 @@ export function PlanningPage() {
               plan={plan}
               onEdit={() => openEdit(plan.trip)}
               onDelete={() => void handleDelete(plan.trip)}
+              onMarkBooked={() =>
+                void updateMutation.mutateAsync({ id: plan.trip.id, data: { status: 'Booked' } })
+              }
+              isMarkingBooked={updateMutation.isPending}
             />
           ))}
 
@@ -129,6 +133,8 @@ export function PlanningPage() {
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editing ? 'Edit Trip' : 'New Plan'}>
         <TripForm
           defaultValues={editing ?? undefined}
+          holidayDates={holidayDates}
+          weekend={weekend}
           onSubmit={(values) => void handleSubmit(values)}
           onCancel={() => setSheetOpen(false)}
           isSubmitting={createMutation.isPending || updateMutation.isPending}

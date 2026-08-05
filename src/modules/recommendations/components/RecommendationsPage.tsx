@@ -33,6 +33,9 @@ export function RecommendationsPage() {
   const navigate = useNavigate()
   const [planning, setPlanning] = useState<VacationRecommendation | null>(null)
 
+  const holidayDates = useMemo(() => new Set((holidays ?? []).map((h) => h.date)), [holidays])
+  const weekend = settings?.weekendDays ?? WEEKEND_PRESETS.SAT_SUN
+
   const remainingLeave = useMemo(
     () =>
       computeAnalytics(
@@ -105,6 +108,8 @@ export function RecommendationsPage() {
               mode: 'Train',
               status: 'Planning',
             }}
+            holidayDates={holidayDates}
+            weekend={weekend}
             onSubmit={(values) => void handleCreateTrip(values)}
             onCancel={() => setPlanning(null)}
             isSubmitting={createTrip.isPending}
