@@ -5,9 +5,12 @@ import { Select } from '@/components/ui/Field'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Spinner } from '@/components/ui/Spinner'
 import { Icon } from '@/components/ui/Icon'
+import { Sheet } from '@/components/ui/Sheet'
 import { WEEKEND_PRESETS } from '@/utils/date'
 import { ROUTES } from '@/constants/routes'
 import { useCreateTrip } from '@/modules/trips/hooks/useTrips'
+import { TripForm } from '@/modules/trips/components/TripForm'
+import type { TripFormValues } from '@/modules/trips/lib/trip.schema'
 import { useLeaveBalances } from '@/modules/leaves/hooks/useLeaveBalances'
 import { useHolidays } from '@/modules/holidays/hooks/useHolidays'
 import { useTrips } from '@/modules/trips/hooks/useTrips'
@@ -15,6 +18,7 @@ import { useSettings } from '@/modules/settings/hooks/useSettings'
 import { computeAnalytics } from '@/modules/analytics/lib/computeAnalytics'
 import { useGeneratedRecommendations } from '../hooks/useGeneratedRecommendations'
 import { RecommendationCard } from './RecommendationCard'
+import type { VacationRecommendation } from '../types/recommendation.types'
 
 const YEAR_OPTIONS = Array.from({ length: 3 }, (_, i) => new Date().getFullYear() + i)
 
@@ -27,6 +31,7 @@ export function RecommendationsPage() {
   const { settings } = useSettings()
   const createTrip = useCreateTrip()
   const navigate = useNavigate()
+  const [planning, setPlanning] = useState<VacationRecommendation | null>(null)
 
   const remainingLeave = useMemo(
     () =>
@@ -40,18 +45,10 @@ export function RecommendationsPage() {
     [year, balances, trips, holidays, settings],
   )
 
-  async function handlePlan(recommendation: (typeof recommendations)[number]) {
-    await createTrip.mutateAsync({
-      title: recommendation.name,
-      purpose: 'Vacation',
-      origin: '',
-      destination: '',
-      departureDate: recommendation.startDate,
-      returnDate: recommendation.endDate,
-      mode: 'Train',
-      status: 'Planning',
-    })
-    navigate(ROUTES.trips)
+  async function handleCreateTrip(values: TripFormValues) {
+    await createTrip.mutateAsync(values)
+    setPlanning(null)
+    navigate(ROUTES.planning)
   }
 
   return (
@@ -85,7 +82,7 @@ export function RecommendationsPage() {
             <RecommendationCard
               key={`${recommendation.startDate}-${recommendation.endDate}`}
               recommendation={recommendation}
-              onPlan={() => void handlePlan(recommendation)}
+              onPlan={() => setPlanning(recommendation)}
             />
           ))}
         </div>
@@ -96,6 +93,24 @@ export function RecommendationsPage() {
           description="Add your leave balance and holidays for this year to get personalized vacation ideas."
         />
       )}
+
+      <Sheet open={planning !== null} onClose={() => setPlanning(null)} title="Plan This Trip">
+        {planning && (
+          <TripForm
+            defaultValues={{
+              title: planning.name,
+              purpose: 'Vacation',
+              departureDate: planning.startDate,
+              returnDate: planning.endDate,
+              mode: 'Train',
+              status: 'Planning',
+            }}
+            onSubmit={(values) => void handleCreateTrip(values)}
+            onCancel={() => setPlanning(null)}
+            isSubmitting={createTrip.isPending}
+          />
+        )}
+      </Sheet>
     </div>
   )
 }

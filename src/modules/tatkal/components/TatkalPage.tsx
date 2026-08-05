@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { Sheet } from '@/components/ui/Sheet'
@@ -13,10 +14,22 @@ import { useTripBookings } from '@/modules/transport/hooks/useTripBookings'
 import { TATKAL_OPEN_TIME } from '../lib/irctcRules'
 import { useCreateTatkalPlan, useRemoveTatkalPlan, useUpdateTatkalPlan } from '../hooks/useTatkalPlans'
 import { useTatkalDashboard } from '../hooks/useTatkalDashboard'
+import { buildDueTatkalNotificationEvents } from '../lib/notificationEvents'
+import type { TatkalNotificationEventType } from '../lib/notificationEvents'
 import { TatkalPlanCard } from './TatkalPlanCard'
 import { TatkalPlanForm } from './TatkalPlanForm'
 import type { TatkalPlanFormValues } from '../lib/tatkalPlan.schema'
 import type { TatkalPlan } from '../types/tatkal.types'
+
+const EVENT_TONE: Record<TatkalNotificationEventType, 'success' | 'danger' | 'warning' | 'brand' | 'neutral'> = {
+  reservationOpensSoon: 'brand',
+  tatkalWindowOpensSoon: 'warning',
+  tatkalWindowOpenNow: 'danger',
+  waitlistMoved: 'success',
+  backupDecisionDue: 'danger',
+  bookingMissed: 'danger',
+  highDemandAlert: 'warning',
+}
 
 const BUCKET_META: { key: 'today' | 'tomorrow' | 'upcoming' | 'missed' | 'recentlyConfirmed'; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -38,13 +51,18 @@ export function TatkalPage() {
   const createMutation = useCreateTatkalPlan()
   const updateMutation = useUpdateTatkalPlan()
   const removeMutation = useRemoveTatkalPlan()
-  const { buckets, backupsByPlanId, tripById, isLoading } = useTatkalDashboard()
+  const { buckets, plans, backupsByPlanId, tripById, isLoading } = useTatkalDashboard()
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TatkalPlan | null>(null)
 
   const tripList = trips ?? []
   const today = todayKey()
+
+  const alerts = useMemo(
+    () => buildDueTatkalNotificationEvents({ plans, backupsByPlanId }),
+    [plans, backupsByPlanId],
+  )
 
   function openCreate() {
     setEditing(null)
@@ -151,6 +169,36 @@ export function TatkalPage() {
           </div>
         )}
       </div>
+
+      {alerts.length > 0 && (
+        <div className="rounded-[14px] border border-white/[0.04] bg-s1 px-5 py-4">
+          <div className="mb-3 font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">
+            Alerts ({alerts.length})
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {alerts.map((event, i) => {
+              const trip = tripById.get(plans.find((p) => p.id === event.tatkalPlanId)?.tripId ?? '')
+              return (
+                <div
+                  key={`${event.tatkalPlanId}-${event.type}-${i}`}
+                  className="flex items-start justify-between gap-3 rounded-[10px] bg-bg px-3.5 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-t1">{event.title}</p>
+                    <p className="mt-0.5 text-xs text-t2">
+                      {trip ? `${trip.title} · ` : ''}
+                      {event.body}
+                    </p>
+                  </div>
+                  <Badge tone={EVENT_TONE[event.type]} className="shrink-0">
+                    {event.type === 'tatkalWindowOpenNow' ? 'Now' : formatDisplay(event.dueOn, 'MMM D')}
+                  </Badge>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-purple/[0.12] bg-purple/5 px-5 py-4">
         <div className="mb-3.5 font-mono text-[9px] font-bold tracking-[1.2px] text-purple uppercase">
