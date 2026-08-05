@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/Card'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { cn } from '@/utils/cn'
 
 type Tone = 'lime' | 'blue' | 'orange' | 'purple' | 'green' | 'red' | 'yellow'
@@ -29,14 +30,13 @@ export function StatTile({
       <p className="mb-2.5 font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">
         {label}
       </p>
-      <p
+      <AnimatedNumber
+        value={value}
         className={cn(
-          'font-mono text-[38px] leading-none font-bold tracking-[-2px]',
+          'block font-mono text-[38px] leading-none font-bold tracking-[-2px]',
           VALUE_TONE[tone],
         )}
-      >
-        {value}
-      </p>
+      />
       {hint && <p className="mt-[5px] text-[11px] text-t2">{hint}</p>}
     </Card>
   )

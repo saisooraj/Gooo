@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { springSnappy } from '@/lib/motion'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -104,13 +106,23 @@ export function TatkalPlanCard({
         </Button>
       </div>
 
-      {expanded && (
-        <div className="mt-3 flex flex-col gap-4 border-t border-white/10 pt-3">
-          <TatkalStageTimeline plan={plan} />
-          <TatkalChecklistPanel plan={plan} backups={backups} onToggleStored={handleToggle} />
-          <BackupOptionList plan={plan} backups={backups} />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={springSnappy}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 flex flex-col gap-4 border-t border-white/10 pt-3">
+              <TatkalStageTimeline plan={plan} />
+              <TatkalChecklistPanel plan={plan} backups={backups} onToggleStored={handleToggle} />
+              <BackupOptionList plan={plan} backups={backups} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   )
 }

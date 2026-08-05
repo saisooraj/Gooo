@@ -1,4 +1,6 @@
+import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
+import { LogoMark } from '@/components/layout/navIcons'
 
 export function Spinner({ className }: { className?: string }) {
   return (
@@ -21,8 +23,27 @@ export function Spinner({ className }: { className?: string }) {
 
 export function FullScreenLoader() {
   return (
-    <div className="flex min-h-svh flex-1 items-center justify-center bg-bg text-lime">
-      <Spinner className="h-8 w-8" />
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="flex min-h-svh flex-1 items-center justify-center bg-bg"
+    >
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-lime">
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 rounded-2xl bg-lime"
+          animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0, 0.6] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          animate={{ scale: [1, 0.88, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <LogoMark className="h-7 w-7" />
+        </motion.div>
+      </div>
+    </motion.div>
   )
 }

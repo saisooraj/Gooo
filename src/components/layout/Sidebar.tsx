@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
 import { SIDEBAR_NAV } from './navigation'
 import { LogoMark } from './navIcons'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
 import { signOut } from '@/firebase/auth'
+import { springSnappy, staggerContainer, scaleIn } from '@/lib/motion'
 
 export function Sidebar() {
   const { user } = useAuth()
@@ -21,14 +23,25 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar sticky top-0 hidden h-svh w-16 min-w-16 shrink-0 flex-col items-center gap-0.5 border-r border-white/[0.04] bg-s1 py-4 md:flex">
-      <div className="mb-[18px] flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-lime">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6, rotate: -10 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={springSnappy}
+        className="mb-[18px] flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-lime"
+      >
         <LogoMark />
-      </div>
+      </motion.div>
 
-      <nav className="flex flex-1 flex-col items-center gap-0.5">
+      <motion.nav
+        initial="hidden"
+        animate="show"
+        variants={staggerContainer(0.05)}
+        className="flex flex-1 flex-col items-center gap-0.5"
+      >
         {SIDEBAR_NAV.map((item) => (
-          <div
+          <motion.div
             key={item.to}
+            variants={scaleIn}
             className="relative flex shrink-0 items-center"
             onMouseEnter={() => setHoveredTo(item.to)}
             onMouseLeave={() => setHoveredTo((prev) => (prev === item.to ? null : prev))}
@@ -38,13 +51,28 @@ export function Sidebar() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] transition-all duration-200',
-                  isActive ? 'bg-lime/[0.12] text-lime' : 'text-t3 hover:text-t2',
-                  hoveredTo === item.to && 'scale-110',
+                  'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px]',
+                  isActive ? 'text-lime' : 'text-t3 hover:text-t2',
                 )
               }
             >
-              <item.icon className="h-[18px] w-[18px]" />
+              {({ isActive }) => (
+                <motion.span
+                  className="flex h-full w-full items-center justify-center"
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={springSnappy}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="sidebar-active-pill"
+                      className="absolute inset-0 rounded-[11px] bg-lime/[0.12]"
+                      transition={springSnappy}
+                    />
+                  )}
+                  <item.icon className="relative z-10 h-[18px] w-[18px]" />
+                </motion.span>
+              )}
             </NavLink>
 
             <span
@@ -58,12 +86,15 @@ export function Sidebar() {
             >
               {item.label}
             </span>
-          </div>
+          </motion.div>
         ))}
-      </nav>
+      </motion.nav>
 
       <div className="group/avatar relative mb-1 flex shrink-0 items-center">
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSnappy, delay: 0.15 }}
           title={user?.displayName ?? 'Traveler'}
           className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#5B8EF6] to-[#A855F7] text-[13px] font-bold text-white"
         >
@@ -72,7 +103,7 @@ export function Sidebar() {
           ) : (
             (user?.displayName?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
           )}
-        </div>
+        </motion.div>
 
         {/* Grows from zero width in normal flow (not absolutely positioned)
             so there's no dead gap between avatar and button to lose hover

@@ -1,6 +1,8 @@
+import { motion } from 'motion/react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formatDisplay } from '@/utils/date'
+import { fadeUp, springSnappy } from '@/lib/motion'
 import type { VacationRecommendation } from '../types/recommendation.types'
 
 export function RecommendationCard({
@@ -18,8 +20,12 @@ export function RecommendationCard({
 
   if (compact) {
     return (
-      <button
+      <motion.button
         type="button"
+        variants={fadeUp}
+        whileHover={{ x: 2, backgroundColor: 'rgba(255,255,255,0.03)' }}
+        whileTap={{ scale: 0.98 }}
+        transition={springSnappy}
         onClick={onPlan}
         className="rounded-[10px] border border-white/[0.03] bg-bg px-3.5 py-3 text-left"
       >
@@ -37,12 +43,12 @@ export function RecommendationCard({
             </span>
           )}
         </div>
-      </button>
+      </motion.button>
     )
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card whileHover={{ y: -3 }} transition={springSnappy} className="overflow-hidden">
       <div className="h-0.5 bg-gradient-to-r from-lime to-transparent" />
       <div className="px-5 py-[18px]">
         <div className="mb-3 flex items-start justify-between gap-2">

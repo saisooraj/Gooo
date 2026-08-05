@@ -1,10 +1,12 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react'
+import { forwardRef } from 'react'
+import { motion } from 'motion/react'
+import type { HTMLMotionProps } from 'motion/react'
 import { cn } from '@/utils/cn'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends HTMLMotionProps<'button'> {
   variant?: Variant
   size?: Size
   fullWidth?: boolean
@@ -28,8 +30,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   return (
-    <button
+    <motion.button
       ref={ref}
+      whileHover={props.disabled ? undefined : { scale: 1.02 }}
+      whileTap={props.disabled ? undefined : { scale: 0.96 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 32 }}
       className={cn(
         'inline-flex items-center justify-center font-medium transition-colors',
         'disabled:cursor-not-allowed disabled:opacity-60',

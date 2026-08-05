@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'motion/react'
+import { staggerContainer } from '@/lib/motion'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -119,7 +121,7 @@ export function LeavesPage() {
         </div>
 
         {sortedBalances.length > 0 ? (
-          <div className="px-5">
+          <motion.div variants={staggerContainer(0.04)} className="px-5">
             {sortedBalances.map((balance) => (
               <LeaveBalanceCard
                 key={balance.id}
@@ -128,7 +130,7 @@ export function LeavesPage() {
                 onDelete={() => void handleDelete(balance)}
               />
             ))}
-          </div>
+          </motion.div>
         ) : (
           <div className="px-5 py-4">
             <EmptyState

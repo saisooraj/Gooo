@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { motion } from 'motion/react'
+import { fadeUp, staggerContainer } from '@/lib/motion'
 
 export interface TimelineItem {
   id: string
@@ -12,9 +14,9 @@ export interface TimelineItem {
 /** Colored dot (or date-box) + connecting line list — used by Dashboard's "What's next" and Tatkal's window list. */
 export function Timeline({ items }: { items: TimelineItem[] }) {
   return (
-    <div className="flex flex-col">
+    <motion.div variants={staggerContainer(0.08)} initial="hidden" animate="show" className="flex flex-col">
       {items.map((item, i) => (
-        <div key={item.id} className="flex gap-3.5">
+        <motion.div key={item.id} variants={fadeUp} className="flex gap-3.5">
           {item.dateBox ? (
             <div className="flex w-[42px] shrink-0 flex-col items-center">
               <div
@@ -29,21 +31,41 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
                 </div>
               </div>
               {i < items.length - 1 && (
-                <span className="mt-1 w-px min-h-4 flex-1" style={{ background: `${item.color}1A` }} />
+                <motion.span
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  style={{ originY: 0, background: `${item.color}1A` }}
+                  className="mt-1 w-px min-h-4 flex-1"
+                />
               )}
             </div>
           ) : (
             <div className="flex w-4 shrink-0 flex-col items-center">
-              <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: item.color }} />
-              {i < items.length - 1 && <span className="mt-[3px] w-px min-h-4 flex-1 bg-white/[0.04]" />}
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
+                style={{ background: item.color }}
+              />
+              {i < items.length - 1 && (
+                <motion.span
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  style={{ originY: 0 }}
+                  className="mt-[3px] w-px min-h-4 flex-1 bg-white/[0.04]"
+                />
+              )}
             </div>
           )}
           <div className="min-w-0 flex-1 pb-[18px]">
             <div className="text-[13px] font-medium text-t1">{item.label}</div>
             <div className="mt-0.5 font-mono text-[11.5px] text-t2">{item.sub}</div>
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }

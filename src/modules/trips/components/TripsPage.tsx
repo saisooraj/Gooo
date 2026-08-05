@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { staggerContainer } from '@/lib/motion'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
@@ -97,28 +99,37 @@ export function TripsPage() {
           <Spinner />
         </div>
       ) : filtered.length > 0 ? (
-        <div className="flex flex-col gap-2.5">
-          {filtered.map((trip) => {
-            const breakdown = classifyDateRange(
-              trip.departureDate,
-              trip.returnDate,
-              holidayDates,
-              weekend,
-              new Set(trip.excludedLeaveDates ?? []),
-            )
-            return (
-              <TripCard
-                key={trip.id}
-                trip={trip}
-                bookings={bookingsByTripId.get(trip.id) ?? []}
-                days={diffDaysInclusive(trip.departureDate, trip.returnDate)}
-                leaveUsed={breakdown.workdays}
-                onEdit={() => openEdit(trip)}
-                onDelete={() => void handleDelete(trip)}
-              />
-            )
-          })}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            variants={staggerContainer(0.05)}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0, transition: { duration: 0.1 } }}
+            className="flex flex-col gap-2.5"
+          >
+            {filtered.map((trip) => {
+              const breakdown = classifyDateRange(
+                trip.departureDate,
+                trip.returnDate,
+                holidayDates,
+                weekend,
+                new Set(trip.excludedLeaveDates ?? []),
+              )
+              return (
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  bookings={bookingsByTripId.get(trip.id) ?? []}
+                  days={diffDaysInclusive(trip.departureDate, trip.returnDate)}
+                  leaveUsed={breakdown.workdays}
+                  onEdit={() => openEdit(trip)}
+                  onDelete={() => void handleDelete(trip)}
+                />
+              )
+            })}
+          </motion.div>
+        </AnimatePresence>
       ) : (
         <EmptyState title="Nothing here yet" description="Start planning your next adventure" />
       )}

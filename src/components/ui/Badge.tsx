@@ -1,4 +1,6 @@
-import type { HTMLAttributes } from 'react'
+import { motion } from 'motion/react'
+import type { HTMLMotionProps } from 'motion/react'
+import { scaleIn } from '@/lib/motion'
 import { cn } from '@/utils/cn'
 
 type Tone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger'
@@ -11,13 +13,16 @@ const toneStyles: Record<Tone, string> = {
   danger: 'bg-red/[0.15] text-red',
 }
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLMotionProps<'span'> {
   tone?: Tone
 }
 
 export function Badge({ className, tone = 'neutral', ...props }: BadgeProps) {
   return (
-    <span
+    <motion.span
+      initial="hidden"
+      animate="show"
+      variants={scaleIn}
       className={cn(
         'inline-flex items-center rounded px-[7px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase',
         toneStyles[tone],

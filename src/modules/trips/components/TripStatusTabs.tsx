@@ -1,4 +1,6 @@
+import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
+import { springSnappy } from '@/lib/motion'
 
 export type TripTab = 'upcoming' | 'past' | 'draft'
 
@@ -17,11 +19,18 @@ export function TripStatusTabs({ value, onChange }: { value: TripTab; onChange: 
           type="button"
           onClick={() => onChange(tab.id)}
           className={cn(
-            'rounded-[7px] px-3.5 py-[7px] font-mono text-xs font-bold tracking-[0.3px] transition-colors',
-            value === tab.id ? 'bg-white/[0.09] text-t1' : 'text-t3',
+            'relative rounded-[7px] px-3.5 py-[7px] font-mono text-xs font-bold tracking-[0.3px]',
+            value === tab.id ? 'text-t1' : 'text-t3',
           )}
         >
-          {tab.label}
+          {value === tab.id && (
+            <motion.span
+              layoutId="trip-tab-active"
+              className="absolute inset-0 rounded-[7px] bg-white/[0.09]"
+              transition={springSnappy}
+            />
+          )}
+          <span className="relative z-10">{tab.label}</span>
         </button>
       ))}
     </div>

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { Icon } from '@/components/ui/Icon'
 import { Sheet } from '@/components/ui/Sheet'
 import { cn } from '@/utils/cn'
 import { PRIMARY_NAV, SECONDARY_NAV } from './navigation'
+import { springSnappy, staggerContainer, fadeUp } from '@/lib/motion'
 
 export function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -13,7 +15,12 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="mob-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.04] bg-s1 md:hidden">
+      <motion.nav
+        initial={{ y: 64 }}
+        animate={{ y: 0 }}
+        transition={springSnappy}
+        className="mob-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.04] bg-s1 md:hidden"
+      >
         <div className="mx-auto flex max-w-md items-stretch justify-between px-1">
           {PRIMARY_NAV.map((item) => (
             <NavLink
@@ -22,13 +29,28 @@ export function BottomNav() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase',
+                  'relative flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase',
                   isActive ? 'text-lime' : 'text-t3',
                 )
               }
             >
-              <item.icon className="h-5 w-5" />
-              {item.label}
+              {({ isActive }) => (
+                <motion.span
+                  className="flex flex-col items-center gap-1"
+                  whileTap={{ scale: 0.88 }}
+                  transition={springSnappy}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="bottomnav-active-dot"
+                      className="absolute top-1 h-1 w-1 rounded-full bg-lime"
+                      transition={springSnappy}
+                    />
+                  )}
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </motion.span>
+              )}
             </NavLink>
           ))}
           <button
@@ -38,17 +60,26 @@ export function BottomNav() {
               isSecondaryActive ? 'text-lime' : 'text-t3',
             )}
           >
-            <Icon name="menu" className="h-5 w-5" />
-            More
+            <motion.span whileTap={{ scale: 0.88 }} transition={springSnappy} className="flex flex-col items-center gap-1">
+              <Icon name="menu" className="h-5 w-5" />
+              More
+            </motion.span>
           </button>
         </div>
-      </nav>
+      </motion.nav>
 
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
-        <div className="grid grid-cols-4 gap-3 pb-2">
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={staggerContainer(0.04)}
+          className="grid grid-cols-4 gap-3 pb-2"
+        >
           {SECONDARY_NAV.map((item) => (
-            <button
+            <motion.button
               key={item.to}
+              variants={fadeUp}
+              whileTap={{ scale: 0.94 }}
               onClick={() => {
                 setMoreOpen(false)
                 navigate(item.to)
@@ -57,9 +88,9 @@ export function BottomNav() {
             >
               <item.icon className="h-5 w-5" />
               {item.label}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
       </Sheet>
     </>
   )

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { formatDisplay } from '@/utils/date'
+import { fadeUp, springSnappy, staggerContainer } from '@/lib/motion'
 import { TripBookingCard } from '@/modules/transport/components/TripBookingCard'
 import { TripBookingForm } from '@/modules/transport/components/TripBookingForm'
 import {
@@ -97,7 +99,7 @@ export function TripCard({
   }
 
   return (
-    <div className="flex overflow-hidden rounded-[14px] border border-white/[0.04] bg-s1">
+    <motion.div variants={fadeUp} className="flex overflow-hidden rounded-[14px] border border-white/[0.04] bg-s1">
       <div className="w-[3px] shrink-0" style={{ background: meta.color }} />
       <div className="flex-1 px-5 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -122,67 +124,91 @@ export function TripCard({
               </span>
             </div>
           </div>
-          <button
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.94 }}
             onClick={() => setExpanded((v) => !v)}
             className="shrink-0 rounded-[7px] border border-white/[0.05] bg-bg px-3 py-1.5 font-mono text-[11.5px] font-bold whitespace-nowrap text-t2"
           >
             {expanded ? 'CLOSE' : 'VIEW'}
-          </button>
+          </motion.button>
         </div>
 
-        {hasStaleBookedTicket && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2">
-            <span className="text-xs text-orange">Tickets are booked — this is still marked Draft.</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
-              onClick={() => void markTripBooked()}
-              disabled={updateTrip.isPending}
+        <AnimatePresence initial={false}>
+          {hasStaleBookedTicket && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-wrap items-center justify-between gap-2 overflow-hidden rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2"
             >
-              MARK BOOKED →
-            </Button>
-          </div>
-        )}
-
-        {expanded && (
-          <div className="mt-4 flex flex-col gap-3 border-t border-white/[0.05] pt-4">
-            <div className="flex items-center justify-between">
-              <div className="font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">Bookings</div>
-              <button
-                type="button"
-                onClick={openAddBooking}
-                className="font-mono text-[11px] font-bold text-lime"
+              <span className="text-xs text-orange">Tickets are booked — this is still marked Draft.</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
+                onClick={() => void markTripBooked()}
+                disabled={updateTrip.isPending}
               >
-                + Add booking
-              </button>
-            </div>
-            {bookings.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {bookings.map((booking) => (
-                  <TripBookingCard
-                    key={booking.id}
-                    booking={booking}
-                    trip={trip}
-                    onEdit={() => openEditBooking(booking)}
-                    onDelete={() => void handleBookingDelete(booking)}
-                  />
-                ))}
+                MARK BOOKED →
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={springSnappy}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 flex flex-col gap-3 border-t border-white/[0.05] pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">Bookings</div>
+                  <button
+                    type="button"
+                    onClick={openAddBooking}
+                    className="font-mono text-[11px] font-bold text-lime"
+                  >
+                    + Add booking
+                  </button>
+                </div>
+                {bookings.length > 0 ? (
+                  <motion.div
+                    variants={staggerContainer(0.05)}
+                    initial="hidden"
+                    animate="show"
+                    className="flex flex-col gap-2"
+                  >
+                    {bookings.map((booking) => (
+                      <TripBookingCard
+                        key={booking.id}
+                        booking={booking}
+                        trip={trip}
+                        onEdit={() => openEditBooking(booking)}
+                        onDelete={() => void handleBookingDelete(booking)}
+                      />
+                    ))}
+                  </motion.div>
+                ) : (
+                  <p className="text-xs text-t3">No bookings linked to this trip yet.</p>
+                )}
+                <div className="flex justify-end gap-2 border-t border-white/[0.05] pt-3">
+                  <Button variant="ghost" size="sm" onClick={onEdit}>
+                    Edit trip
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-red" onClick={onDelete}>
+                    Delete trip
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <p className="text-xs text-t3">No bookings linked to this trip yet.</p>
-            )}
-            <div className="flex justify-end gap-2 border-t border-white/[0.05] pt-3">
-              <Button variant="ghost" size="sm" onClick={onEdit}>
-                Edit trip
-              </Button>
-              <Button variant="ghost" size="sm" className="text-red" onClick={onDelete}>
-                Delete trip
-              </Button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <Sheet
@@ -198,6 +224,6 @@ export function TripCard({
           isSubmitting={createBooking.isPending || updateBooking.isPending}
         />
       </Sheet>
-    </div>
+    </motion.div>
   )
 }

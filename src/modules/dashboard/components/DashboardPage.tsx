@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { fadeUp, springSnappy, staggerContainer } from '@/lib/motion'
 import { StatTile } from '@/components/ui/StatTile'
 import { Spinner } from '@/components/ui/Spinner'
 import { Timeline } from '@/components/ui/Timeline'
@@ -162,7 +164,7 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto flex max-w-[1020px] flex-col gap-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <motion.div variants={fadeUp} className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-[5px] font-mono text-xs font-medium tracking-[1.5px] text-t2 uppercase">
             {formatDisplay(today, 'ddd, MMM D').toUpperCase()}
@@ -173,8 +175,11 @@ export function DashboardPage() {
             <span className="text-lime">{user?.displayName?.split(' ')[0] ?? 'Traveler'}</span>
           </h1>
         </div>
-        <button
+        <motion.button
           type="button"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          transition={springSnappy}
           onClick={openCommandPalette}
           className="flex items-center gap-2 rounded-[10px] border border-white/5 bg-s2 px-3.5 py-[9px] text-[13px] text-t3"
         >
@@ -186,8 +191,8 @@ export function DashboardPage() {
           <kbd className="hidden rounded bg-white/[0.04] px-[5px] py-0.5 font-mono text-[10px] text-t3 md:inline">
             ⌘K
           </kbd>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {tatkalTodayCount > 0 || tatkalTomorrowCount > 0 ? (
         <ActionBanner
@@ -207,7 +212,7 @@ export function DashboardPage() {
         />
       ) : null}
 
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+      <motion.div variants={staggerContainer(0.05)} className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <StatTile label="Leaves" value={analytics.currentBalance} hint={`of ${Math.round(totalEntitlement)} remaining`} tone="lime" />
         <StatTile
           label="Next Hol"
@@ -227,9 +232,9 @@ export function DashboardPage() {
           hint={bestRecommendation ? `${bestRecommendation.name} · ${bestRecommendation.leaveUsed} leave` : 'No picks yet'}
           tone="purple"
         />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+      <motion.div variants={staggerContainer(0.08)} className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
         <Card className="p-[22px]">
           <div className="mb-[18px] font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">
             What&apos;s Next
@@ -244,16 +249,17 @@ export function DashboardPage() {
         <Card className="p-[22px]">
           <div className="mb-[18px] flex items-center justify-between">
             <div className="font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">Top Picks</div>
-            <button
+            <motion.button
               type="button"
+              whileHover={{ x: 2 }}
               onClick={() => navigate(ROUTES.recommendations)}
               className="text-[11.5px] font-semibold text-lime"
             >
               see all →
-            </button>
+            </motion.button>
           </div>
           {recommendations.length > 0 ? (
-            <div className="flex flex-col gap-1.5">
+            <motion.div variants={staggerContainer(0.05)} initial="hidden" animate="show" className="flex flex-col gap-1.5">
               {recommendations.slice(0, 3).map((rec) => (
                 <RecommendationCard
                   key={`${rec.startDate}-${rec.endDate}`}
@@ -262,12 +268,12 @@ export function DashboardPage() {
                   onPlan={() => navigate(ROUTES.recommendations)}
                 />
               ))}
-            </div>
+            </motion.div>
           ) : (
             <p className="text-sm text-t3">Add leave & holidays to get picks.</p>
           )}
         </Card>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -293,12 +299,23 @@ function ActionBanner({
   onClick: () => void
 }) {
   return (
-    <button
+    <motion.button
       type="button"
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={springSnappy}
       onClick={onClick}
       className="relative overflow-hidden rounded-[14px] bg-lime px-6 py-5 text-left"
     >
-      <span className="absolute -top-2.5 -right-2.5 h-[120px] w-[120px] rounded-full bg-black/[0.07]" />
+      <motion.span
+        aria-hidden
+        className="absolute -top-2.5 -right-2.5 h-[120px] w-[120px] rounded-full bg-black/[0.07]"
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+      />
       <span className="absolute top-5 right-[30px] h-[60px] w-[60px] rounded-full bg-black/5" />
       <div className="relative flex items-start justify-between gap-3">
         <div>
@@ -312,6 +329,6 @@ function ActionBanner({
           {cta}
         </span>
       </div>
-    </button>
+    </motion.button>
   )
 }

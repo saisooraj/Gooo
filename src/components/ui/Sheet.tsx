@@ -1,6 +1,8 @@
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { springSoft } from '@/lib/motion'
 import { cn } from '@/utils/cn'
 
 /** Mobile-native bottom sheet: slides up from the bottom, dismissible via backdrop tap. */
@@ -38,25 +40,35 @@ export function Sheet({
     }
   }, [open])
 
-  if (!open) return null
-
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <button
-        aria-label="Close"
-        className="absolute inset-0 bg-black/50 backdrop-blur-[1px] animate-fade-in"
-        onClick={onClose}
-      />
-      <div
-        className={cn(
-          'safe-bottom relative flex max-h-[85svh] w-full max-w-md flex-col rounded-t-3xl border-t border-white/10 bg-s1 animate-fade-in',
-        )}
-      >
-        <div className="mx-auto mt-4 mb-3 h-1.5 w-10 shrink-0 rounded-full bg-white/15" />
-        {title && <h2 className="mb-2 shrink-0 px-4 text-base font-semibold text-t1">{title}</h2>}
-        <div className="min-h-0 overflow-y-auto px-4 pb-4">{children}</div>
-      </div>
-    </div>,
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <motion.button
+            aria-label="Close"
+            className="absolute inset-0 bg-black/50 backdrop-blur-[1px]"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+          <motion.div
+            className={cn(
+              'safe-bottom relative flex max-h-[85svh] w-full max-w-md flex-col rounded-t-3xl border-t border-white/10 bg-s1',
+            )}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={springSoft}
+          >
+            <div className="mx-auto mt-4 mb-3 h-1.5 w-10 shrink-0 rounded-full bg-white/15" />
+            {title && <h2 className="mb-2 shrink-0 px-4 text-base font-semibold text-t1">{title}</h2>}
+            <div className="min-h-0 overflow-y-auto px-4 pb-4">{children}</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
     document.body,
   )
 }

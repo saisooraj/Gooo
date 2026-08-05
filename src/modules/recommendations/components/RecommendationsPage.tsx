@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { staggerContainer } from '@/lib/motion'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Select } from '@/components/ui/Field'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -80,7 +82,10 @@ export function RecommendationsPage() {
           <Spinner />
         </div>
       ) : recommendations.length > 0 ? (
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={staggerContainer(0.05)}
+          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {recommendations.map((recommendation) => (
             <RecommendationCard
               key={`${recommendation.startDate}-${recommendation.endDate}`}
@@ -88,7 +93,7 @@ export function RecommendationsPage() {
               onPlan={() => setPlanning(recommendation)}
             />
           ))}
-        </div>
+        </motion.div>
       ) : (
         <EmptyState
           icon={<Icon name="sparkles" className="mx-auto h-8 w-8 text-t3" />}

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { formatDisplay } from '@/utils/date'
+import { fadeUp, springSnappy, springSoft, staggerContainer } from '@/lib/motion'
 import type { DerivedPlan, PlanStatus } from '../lib/derivePlanSteps'
 
 const STATUS_COLOR: Record<PlanStatus, string> = {
@@ -33,17 +35,22 @@ export function PlanCard({
   const hasStaleBookedTicket = trip.status === 'Planning' && plan.steps.find((s) => s.id === 'booked')?.done
 
   return (
-    <div className="rounded-[14px] border border-white/[0.04] bg-s1 p-5">
+    <motion.div variants={fadeUp} className="rounded-[14px] border border-white/[0.04] bg-s1 p-5">
       <div className="mb-3.5 flex items-center justify-between">
-        <span
+        <motion.span
+          key={plan.status}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={springSnappy}
           className="inline-flex items-center rounded px-[7px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase"
           style={{ background: `${color}18`, color }}
         >
           {plan.status}
-        </span>
+        </motion.span>
         <div className="relative">
-          <button
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.85 }}
             onClick={() => setMenuOpen((v) => !v)}
             className="flex h-[22px] w-[22px] items-center justify-center text-t3"
             aria-label="Plan actions"
@@ -53,31 +60,40 @@ export function PlanCard({
               <circle cx="6" cy="6" r="1" fill="currentColor" />
               <circle cx="10" cy="6" r="1" fill="currentColor" />
             </svg>
-          </button>
-          {menuOpen && (
-            <div className="absolute top-6 right-0 z-10 w-32 overflow-hidden rounded-lg border border-white/10 bg-s2 py-1 shadow-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false)
-                  onEdit()
-                }}
-                className="block w-full px-3 py-2 text-left text-xs text-t1 hover:bg-white/5"
+          </motion.button>
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                transition={springSnappy}
+                style={{ originX: 1, originY: 0 }}
+                className="absolute top-6 right-0 z-10 w-32 overflow-hidden rounded-lg border border-white/10 bg-s2 py-1 shadow-lg"
               >
-                Edit trip
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false)
-                  onDelete()
-                }}
-                className="block w-full px-3 py-2 text-left text-xs text-red hover:bg-white/5"
-              >
-                Delete
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onEdit()
+                  }}
+                  className="block w-full px-3 py-2 text-left text-xs text-t1 hover:bg-white/5"
+                >
+                  Edit trip
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onDelete()
+                  }}
+                  className="block w-full px-3 py-2 text-left text-xs text-red hover:bg-white/5"
+                >
+                  Delete
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -87,28 +103,42 @@ export function PlanCard({
         {formatDisplay(trip.returnDate, 'MMM D')}
       </p>
 
-      {hasStaleBookedTicket && (
-        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2">
-          <span className="text-xs text-orange">Tickets booked — still marked Draft.</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
-            onClick={onMarkBooked}
-            disabled={isMarkingBooked}
+      <AnimatePresence>
+        {hasStaleBookedTicket && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginBottom: 14 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-wrap items-center justify-between gap-2 overflow-hidden rounded-[9px] border border-orange/20 bg-orange/[0.08] px-3 py-2"
           >
-            MARK BOOKED →
-          </Button>
-        </div>
-      )}
+            <span className="text-xs text-orange">Tickets booked — still marked Draft.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="!h-auto !py-1 font-mono text-[11px] font-bold text-orange"
+              onClick={onMarkBooked}
+              disabled={isMarkingBooked}
+            >
+              MARK BOOKED →
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mb-3.5 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="h-full rounded-full transition-[width]" style={{ width: `${plan.progress}%`, background: color }} />
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${plan.progress}%` }}
+          transition={springSoft}
+        />
       </div>
 
-      <div className="flex flex-col gap-[7px]">
+      <motion.div variants={staggerContainer(0.04)} initial="hidden" animate="show" className="flex flex-col gap-[7px]">
         {plan.steps.map((step) => (
-          <div key={step.id} className="flex items-center gap-2">
+          <motion.div key={step.id} variants={fadeUp} className="flex items-center gap-2">
             <span
               className="flex h-[13px] w-[13px] shrink-0 items-center justify-center rounded-[3px] border"
               style={{
@@ -116,12 +146,23 @@ export function PlanCard({
                 background: step.done ? 'rgba(78,203,160,0.1)' : 'transparent',
               }}
             >
-              {step.done && <Icon name="check" className="h-2 w-2 text-green" />}
+              <AnimatePresence>
+                {step.done && (
+                  <motion.span
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={springSnappy}
+                  >
+                    <Icon name="check" className="h-2 w-2 text-green" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </span>
             <span className={`text-xs ${step.done ? 'text-green' : 'text-t3'}`}>{step.label}</span>
-          </div>
+          </motion.div>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

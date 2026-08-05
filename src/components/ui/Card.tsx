@@ -1,9 +1,13 @@
+import { motion } from 'motion/react'
+import type { HTMLMotionProps } from 'motion/react'
 import type { HTMLAttributes } from 'react'
+import { fadeUp } from '@/lib/motion'
 import { cn } from '@/utils/cn'
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ className, ...props }: HTMLMotionProps<'div'>) {
   return (
-    <div
+    <motion.div
+      variants={fadeUp}
       className={cn('rounded-[14px] border border-white/[0.04] bg-s1', className)}
       {...props}
     />

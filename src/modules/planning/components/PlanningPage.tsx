@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'motion/react'
+import { fadeUp, staggerContainer, springSnappy } from '@/lib/motion'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Icon } from '@/components/ui/Icon'
 import { Sheet } from '@/components/ui/Sheet'
@@ -78,14 +80,17 @@ export function PlanningPage() {
         eyebrow="WORKSPACE"
         title="Planning"
         action={
-          <button
+          <motion.button
             type="button"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSnappy}
             onClick={openCreate}
             className="flex items-center gap-1.5 rounded-[9px] bg-lime px-4 py-[9px] font-mono text-[13px] font-bold text-bg"
           >
             <Icon name="plus" className="h-2.5 w-2.5" />
             NEW PLAN
-          </button>
+          </motion.button>
         }
       />
 
@@ -94,7 +99,7 @@ export function PlanningPage() {
           <Spinner />
         </div>
       ) : plans.length > 0 ? (
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div variants={staggerContainer(0.06)} className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => (
             <PlanCard
               key={plan.trip.id}
@@ -108,8 +113,12 @@ export function PlanningPage() {
             />
           ))}
 
-          <button
+          <motion.button
+            variants={fadeUp}
             type="button"
+            whileHover={{ scale: 1.015, borderColor: 'rgba(201,245,60,0.25)' }}
+            whileTap={{ scale: 0.985 }}
+            transition={springSnappy}
             onClick={openCreate}
             className="flex min-h-[180px] flex-col items-center justify-center gap-3 rounded-[14px] border-[1.5px] border-dashed border-white/[0.06] p-5"
           >
@@ -120,8 +129,8 @@ export function PlanningPage() {
               <span className="block text-[13px] font-semibold text-t2">New plan</span>
               <span className="mt-0.5 block text-[11px] text-t3">Brainstorm your next trip</span>
             </span>
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       ) : (
         <EmptyState
           icon={<Icon name="flag" className="mx-auto h-8 w-8 text-t3" />}

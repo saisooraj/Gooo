@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { motion } from 'motion/react'
+import { fadeUp } from '@/lib/motion'
 
 export function PageHeader({
   eyebrow,
@@ -12,7 +14,7 @@ export function PageHeader({
   action?: ReactNode
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <motion.div variants={fadeUp} className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
         {eyebrow && (
           <div className="mb-1.5 font-mono text-[9px] font-bold tracking-[1.2px] text-t3 uppercase">
@@ -23,6 +25,6 @@ export function PageHeader({
         {description && <p className="mt-1 text-[13px] text-t2">{description}</p>}
       </div>
       {action}
-    </div>
+    </motion.div>
   )
 }
