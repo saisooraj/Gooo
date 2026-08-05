@@ -94,6 +94,14 @@ export function DashboardPage() {
     [trips, today],
   )
 
+  const nextLeave = useMemo(
+    () =>
+      (trips ?? [])
+        .filter((t) => t.status === 'Booked' && compareDateKeys(t.departureDate, today) >= 0)
+        .sort((a, b) => compareDateKeys(a.departureDate, b.departureDate))[0],
+    [trips, today],
+  )
+
   const bestRecommendation = recommendations[0]
 
   const actionableBookings = useMemo(
@@ -212,7 +220,7 @@ export function DashboardPage() {
         />
       ) : null}
 
-      <motion.div variants={staggerContainer(0.05)} className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+      <motion.div variants={staggerContainer(0.05)} className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5">
         <StatTile label="Leaves" value={analytics.currentBalance} hint={`of ${Math.round(totalEntitlement)} remaining`} tone="lime" />
         <StatTile
           label="Next Hol"
@@ -225,6 +233,12 @@ export function DashboardPage() {
           value={nextTrip ? diffDays(today, nextTrip.departureDate) : '—'}
           hint={nextTrip ? `days · ${nextTrip.title}` : 'None planned'}
           tone="blue"
+        />
+        <StatTile
+          label="Next Leave"
+          value={nextLeave ? diffDays(today, nextLeave.departureDate) : '—'}
+          hint={nextLeave ? `days · ${nextLeave.title}` : 'None booked'}
+          tone="green"
         />
         <StatTile
           label="Best"
@@ -264,8 +278,7 @@ export function DashboardPage() {
                 <RecommendationCard
                   key={`${rec.startDate}-${rec.endDate}`}
                   recommendation={rec}
-                  compact
-                  onPlan={() => navigate(ROUTES.recommendations)}
+                  onSelect={() => navigate(ROUTES.recommendations)}
                 />
               ))}
             </motion.div>
