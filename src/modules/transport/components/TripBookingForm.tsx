@@ -1,9 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useMemo } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/Button'
+import { Combobox, type ComboboxOption } from '@/components/ui/Combobox'
 import { Field, Input, Select } from '@/components/ui/Field'
 import { DEFAULT_ADVANCE_RESERVATION_DAYS } from '@/constants/transport'
 import type { Trip } from '@/modules/trips/types/trip.types'
+import { useStationLookup, useTrainLookup } from '../hooks/useRailRadarLookup'
 import {
   tripBookingSchema,
   type TripBookingFormInput,
@@ -25,8 +28,10 @@ export function TripBookingForm({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<TripBookingFormInput, unknown, TripBookingFormValues>({
     resolver: zodResolver(tripBookingSchema),
@@ -42,6 +47,21 @@ export function TripBookingForm({
   })
 
   const mode = watch('mode')
+
+  const { data: trainLookup } = useTrainLookup()
+  const { data: stationLookup } = useStationLookup()
+
+  const trainOptions = useMemo<ComboboxOption[]>(
+    () =>
+      trainLookup
+        ? Object.entries(trainLookup).map(([number, name]) => ({ value: number, label: name, sublabel: number }))
+        : [],
+    [trainLookup],
+  )
+  const stationOptions = useMemo<ComboboxOption[]>(
+    () => (stationLookup ? Object.values(stationLookup).map((name) => ({ value: name, label: name })) : []),
+    [stationLookup],
+  )
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto pb-1">
@@ -71,7 +91,23 @@ export function TripBookingForm({
         <>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Train Number">
-              <Input {...register('trainNumber')} />
+              <Controller
+                control={control}
+                name="trainNumber"
+                render={({ field }) => (
+                  <Combobox
+                    id={field.name}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    onSelect={(option) => {
+                      field.onChange(option.value)
+                      setValue('trainName', option.label)
+                    }}
+                    options={trainOptions}
+                    placeholder="e.g. 12951"
+                  />
+                )}
+              />
             </Field>
             <Field label="Train Name">
               <Input {...register('trainName')} />
@@ -79,10 +115,34 @@ export function TripBookingForm({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Boarding Station">
-              <Input {...register('boardingStation')} />
+              <Controller
+                control={control}
+                name="boardingStation"
+                render={({ field }) => (
+                  <Combobox
+                    id={field.name}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    options={stationOptions}
+                    placeholder="e.g. New Delhi"
+                  />
+                )}
+              />
             </Field>
             <Field label="Destination Station">
-              <Input {...register('destinationStation')} />
+              <Controller
+                control={control}
+                name="destinationStation"
+                render={({ field }) => (
+                  <Combobox
+                    id={field.name}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    options={stationOptions}
+                    placeholder="e.g. Mumbai Central"
+                  />
+                )}
+              />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
