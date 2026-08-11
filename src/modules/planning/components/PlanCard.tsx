@@ -12,18 +12,31 @@ const STATUS_COLOR: Record<PlanStatus, string> = {
   DRAFT: '#F2844A',
 }
 
+export interface MissedLeg {
+  tripBookingId: string
+  label: 'Onward' | 'Return'
+}
+
 export function PlanCard({
   plan,
   onEdit,
   onDelete,
   onMarkBooked,
   isMarkingBooked,
+  onConfirmLeave,
+  isConfirmingLeave,
+  missedLegs = [],
+  onSwitchToTatkal,
 }: {
   plan: DerivedPlan
   onEdit: () => void
   onDelete: () => void
   onMarkBooked: () => void
   isMarkingBooked?: boolean
+  onConfirmLeave?: () => void
+  isConfirmingLeave?: boolean
+  missedLegs?: MissedLeg[]
+  onSwitchToTatkal?: (tripBookingId: string) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const color = STATUS_COLOR[plan.status]
@@ -32,21 +45,30 @@ export function PlanCard({
   // Tickets are booked (per the checklist) but the trip's own status field
   // never caught up — same stale-Draft gap as TripCard, surfaced here too
   // since this is the "workspace" view of the same trip.
-  const hasStaleBookedTicket = trip.status === 'Planning' && plan.steps.find((s) => s.id === 'booked')?.done
+  const bookedSteps = plan.steps.filter((s) => s.id.startsWith('booked'))
+  const hasStaleBookedTicket =
+    trip.status === 'Planning' && bookedSteps.length > 0 && bookedSteps.every((s) => s.done)
 
   return (
     <motion.div variants={fadeUp} className="rounded-[14px] border border-white/[0.04] bg-s1 p-5">
       <div className="mb-3.5 flex items-center justify-between">
-        <motion.span
-          key={plan.status}
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={springSnappy}
-          className="inline-flex items-center rounded px-[7px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase"
-          style={{ background: `${color}18`, color }}
-        >
-          {plan.status}
-        </motion.span>
+        <div className="flex items-center gap-1.5">
+          <motion.span
+            key={plan.status}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={springSnappy}
+            className="inline-flex items-center rounded px-[7px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] uppercase"
+            style={{ background: `${color}18`, color }}
+          >
+            {plan.status}
+          </motion.span>
+          {plan.hasTatkalPlan && (
+            <span className="rounded bg-purple/10 px-[7px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] text-purple uppercase">
+              Tatkal
+            </span>
+          )}
+        </div>
         <div className="relative">
           <motion.button
             type="button"
@@ -126,6 +148,23 @@ export function PlanCard({
         )}
       </AnimatePresence>
 
+      {missedLegs.map((leg) => (
+        <div
+          key={leg.tripBookingId}
+          className="mb-3.5 flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-purple/20 bg-purple/[0.08] px-3 py-2"
+        >
+          <span className="text-xs text-purple">Missed general booking ({leg.label})</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!h-auto !py-1 font-mono text-[11px] font-bold text-purple"
+            onClick={() => onSwitchToTatkal?.(leg.tripBookingId)}
+          >
+            SWITCH TO TATKAL →
+          </Button>
+        </div>
+      ))}
+
       <div className="mb-3.5 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
         <motion.div
           className="h-full rounded-full"
@@ -137,12 +176,13 @@ export function PlanCard({
       </div>
 
       <motion.div variants={staggerContainer(0.04)} initial="hidden" animate="show" className="flex flex-col gap-[7px]">
-        {plan.steps.map((step) => (
-          <motion.div key={step.id} variants={fadeUp} className="flex items-center gap-2">
+        {plan.steps.map((step) => {
+          const isConfirmableLeave = step.id === 'leave' && !step.done && Boolean(onConfirmLeave)
+          const dot = (
             <span
               className="flex h-[13px] w-[13px] shrink-0 items-center justify-center rounded-[3px] border"
               style={{
-                borderColor: step.done ? '#4ECBA0' : 'rgba(255,255,255,0.08)',
+                borderColor: step.done ? '#4ECBA0' : isConfirmableLeave ? 'rgba(196,166,255,0.4)' : 'rgba(255,255,255,0.08)',
                 background: step.done ? 'rgba(78,203,160,0.1)' : 'transparent',
               }}
             >
@@ -159,9 +199,34 @@ export function PlanCard({
                 )}
               </AnimatePresence>
             </span>
-            <span className={`text-xs ${step.done ? 'text-green' : 'text-t3'}`}>{step.label}</span>
-          </motion.div>
-        ))}
+          )
+          const label = (
+            <span className={`text-xs ${step.done ? 'text-green' : isConfirmableLeave ? 'text-purple' : 'text-t3'}`}>
+              {step.label}
+              {isConfirmableLeave ? ' — tap to confirm' : ''}
+            </span>
+          )
+          return (
+            <motion.div key={step.id} variants={fadeUp}>
+              {isConfirmableLeave ? (
+                <button
+                  type="button"
+                  onClick={() => onConfirmLeave?.()}
+                  disabled={isConfirmingLeave}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  {dot}
+                  {label}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {dot}
+                  {label}
+                </div>
+              )}
+            </motion.div>
+          )
+        })}
       </motion.div>
     </motion.div>
   )

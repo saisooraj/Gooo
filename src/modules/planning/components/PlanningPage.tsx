@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { fadeUp, staggerContainer, springSnappy } from '@/lib/motion'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -7,18 +8,24 @@ import { Sheet } from '@/components/ui/Sheet'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { WEEKEND_PRESETS } from '@/utils/date'
+import { ROUTES } from '@/constants/routes'
 import { useTrips, useCreateTrip, useUpdateTrip, useRemoveTrip } from '@/modules/trips/hooks/useTrips'
 import { TripForm } from '@/modules/trips/components/TripForm'
 import type { TripFormValues } from '@/modules/trips/lib/trip.schema'
 import type { Trip } from '@/modules/trips/types/trip.types'
 import { useTripBookings } from '@/modules/transport/hooks/useTripBookings'
+import { computeBookingWindow, getBookingReminder } from '@/modules/transport/lib/bookingWindow'
+import { DEFAULT_ADVANCE_RESERVATION_DAYS } from '@/constants/transport'
 import { useTatkalPlans } from '@/modules/tatkal/hooks/useTatkalPlans'
 import { useHolidays } from '@/modules/holidays/hooks/useHolidays'
 import { useSettings } from '@/modules/settings/hooks/useSettings'
 import { derivePlanSteps } from '../lib/derivePlanSteps'
+import { matchTripLegBookings } from '../lib/matchTripLegBookings'
 import { PlanCard } from './PlanCard'
+import type { MissedLeg } from './PlanCard'
 
 export function PlanningPage() {
+  const navigate = useNavigate()
   const { data: trips, isLoading: loadingTrips } = useTrips()
   const { data: bookings, isLoading: loadingBookings } = useTripBookings()
   const { data: tatkalPlans, isLoading: loadingTatkal } = useTatkalPlans()
@@ -48,6 +55,30 @@ export function PlanningPage() {
       ),
     )
   }, [trips, bookings, tatkalPlans, holidayDates, weekend])
+
+  const missedLegsByTripId = useMemo(() => {
+    const linkedTripBookingIds = new Set((tatkalPlans ?? []).map((p) => p.tripBookingId).filter(Boolean))
+    const map = new Map<string, MissedLeg[]>()
+    for (const trip of trips ?? []) {
+      if (trip.status !== 'Planning') continue
+      const legs: MissedLeg[] = []
+      const tripBookings = (bookings ?? []).filter((b) => b.tripId === trip.id)
+      const { onward, return: returnBooking } = matchTripLegBookings(trip, tripBookings)
+      for (const [leg, label] of [
+        [onward, 'Onward'],
+        [returnBooking, 'Return'],
+      ] as const) {
+        if (!leg || linkedTripBookingIds.has(leg.id)) continue
+        const advanceDays = leg.train?.advanceReservationDays ?? DEFAULT_ADVANCE_RESERVATION_DAYS
+        const window = computeBookingWindow(leg.journeyDate, advanceDays)
+        if (getBookingReminder(window, leg.bookedDate) === 'already-missed') {
+          legs.push({ tripBookingId: leg.id, label })
+        }
+      }
+      if (legs.length > 0) map.set(trip.id, legs)
+    }
+    return map
+  }, [trips, bookings, tatkalPlans])
 
   function openCreate() {
     setEditing(null)
@@ -110,6 +141,14 @@ export function PlanningPage() {
                 void updateMutation.mutateAsync({ id: plan.trip.id, data: { status: 'Booked' } })
               }
               isMarkingBooked={updateMutation.isPending}
+              onConfirmLeave={() =>
+                void updateMutation.mutateAsync({ id: plan.trip.id, data: { leaveConfirmed: true } })
+              }
+              isConfirmingLeave={updateMutation.isPending}
+              missedLegs={missedLegsByTripId.get(plan.trip.id) ?? []}
+              onSwitchToTatkal={(tripBookingId) =>
+                navigate(ROUTES.tatkal, { state: { tripId: plan.trip.id, tripBookingId } })
+              }
             />
           ))}
 

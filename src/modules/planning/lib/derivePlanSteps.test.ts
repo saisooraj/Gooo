@@ -68,13 +68,19 @@ describe('derivePlanSteps', () => {
     const result = derivePlanSteps(trip(), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
     expect(result.steps.find((s) => s.id === 'leave')?.done).toBe(false)
     expect(result.steps.find((s) => s.id === 'research')?.done).toBe(false)
-    expect(result.steps.find((s) => s.id === 'booked')?.done).toBe(false)
+    expect(result.steps.find((s) => s.id === 'booked-onward')?.done).toBe(false)
+    expect(result.steps.find((s) => s.id === 'booked-return')?.done).toBe(false)
     expect(result.status).toBe('DRAFT')
     expect(result.progress).toBe(0)
   })
 
   it('marks leave planned once the trip moves out of Planning status', () => {
     const result = derivePlanSteps(trip({ status: 'Booked' }), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
+    expect(result.steps.find((s) => s.id === 'leave')?.done).toBe(true)
+  })
+
+  it('marks leave planned once the user manually confirms it', () => {
+    const result = derivePlanSteps(trip({ leaveConfirmed: true }), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
     expect(result.steps.find((s) => s.id === 'leave')?.done).toBe(true)
   })
 
@@ -112,21 +118,34 @@ describe('derivePlanSteps', () => {
     expect(derivePlanSteps(trip(), [], [tatkalPlan()], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).steps.find((s) => s.id === 'research')?.done).toBe(true)
   })
 
-  it('marks booked done when a booking has a bookedDate or the trip status is Booked', () => {
-    expect(
-      derivePlanSteps(trip(), [booking({ bookedDate: '2026-08-01' })], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).steps.find(
-        (s) => s.id === 'booked',
-      )?.done,
-    ).toBe(true)
-    expect(
-      derivePlanSteps(trip({ status: 'Booked' }), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).steps.find((s) => s.id === 'booked')
-        ?.done,
-    ).toBe(true)
+  it('flags hasTatkalPlan when a TatkalPlan is linked to the trip', () => {
+    expect(derivePlanSteps(trip(), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).hasTatkalPlan).toBe(false)
+    expect(derivePlanSteps(trip(), [], [tatkalPlan()], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN).hasTatkalPlan).toBe(true)
+  })
+
+  it('splits booked into onward/return legs for multi-day trips, keyed by journeyDate', () => {
+    // booking() journeyDate matches the trip's departureDate — onward only.
+    const result = derivePlanSteps(trip(), [booking({ bookedDate: '2026-08-01' })], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
+    expect(result.steps.find((s) => s.id === 'booked-onward')?.done).toBe(true)
+    expect(result.steps.find((s) => s.id === 'booked-return')?.done).toBe(false)
+  })
+
+  it('marks both legs booked once the trip status is Booked, regardless of individual bookings', () => {
+    const result = derivePlanSteps(trip({ status: 'Booked' }), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
+    expect(result.steps.find((s) => s.id === 'booked-onward')?.done).toBe(true)
+    expect(result.steps.find((s) => s.id === 'booked-return')?.done).toBe(true)
+  })
+
+  it('keeps a single "booked" step for same-day trips', () => {
+    const sameDay = trip({ departureDate: '2026-10-03', returnDate: '2026-10-03' })
+    const result = derivePlanSteps(sameDay, [booking({ journeyDate: '2026-10-03', bookedDate: '2026-08-01' })], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
+    expect(result.steps.map((s) => s.id)).toEqual(['leave', 'research', 'booked'])
+    expect(result.steps.find((s) => s.id === 'booked')?.done).toBe(true)
   })
 
   it('is ACTIVE once every step is done', () => {
     const result = derivePlanSteps(
-      trip({ status: 'Booked' }),
+      trip({ status: 'Booked', leaveConfirmed: true }),
       [booking({ bookedDate: '2026-08-01' })],
       [],
       NO_HOLIDAYS,
@@ -137,9 +156,9 @@ describe('derivePlanSteps', () => {
   })
 
   it('is IN PROGRESS with partial completion', () => {
-    // Booked (leave + booked done) but no booking/tatkal plan linked yet (research not done) = 2/3.
+    // Booked trip (leave + both booked legs done) but no booking/tatkal plan linked yet (research not done) = 3/4.
     const result = derivePlanSteps(trip({ status: 'Booked' }), [], [], NO_HOLIDAYS, WEEKEND_PRESETS.SAT_SUN)
     expect(result.status).toBe('IN PROGRESS')
-    expect(result.progress).toBe(67)
+    expect(result.progress).toBe(75)
   })
 })

@@ -20,4 +20,6 @@ export interface Trip extends FirestoreDocument {
   recommendationId?: string
   /** Workdays within [departureDate, returnDate] that did NOT actually require leave (e.g. an evening departure after work). */
   excludedLeaveDates?: DateKey[]
+  /** Manually confirmed by the user once leave is actually secured — this app has no leave-approval workflow to derive it from. */
+  leaveConfirmed?: boolean
 }

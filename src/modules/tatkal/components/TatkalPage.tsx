@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -7,8 +8,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Spinner } from '@/components/ui/Spinner'
 import { Timeline } from '@/components/ui/Timeline'
-import type { TimelineItem } from '@/components/ui/Timeline'
-import { addDays, diffDays, formatDisplay, todayKey } from '@/utils/date'
+import { addDays, formatDisplay, todayKey } from '@/utils/date'
 import { useTrips } from '@/modules/trips/hooks/useTrips'
 import { useTripBookings } from '@/modules/transport/hooks/useTripBookings'
 import { TATKAL_OPEN_TIME } from '../lib/irctcRules'
@@ -16,10 +16,16 @@ import { useCreateTatkalPlan, useRemoveTatkalPlan, useUpdateTatkalPlan } from '.
 import { useTatkalDashboard } from '../hooks/useTatkalDashboard'
 import { buildDueTatkalNotificationEvents } from '../lib/notificationEvents'
 import type { TatkalNotificationEventType } from '../lib/notificationEvents'
+import { buildTatkalWindowItem } from '../lib/tatkalWindowItems'
 import { TatkalPlanCard } from './TatkalPlanCard'
 import { TatkalPlanForm } from './TatkalPlanForm'
 import type { TatkalPlanFormValues } from '../lib/tatkalPlan.schema'
 import type { TatkalPlan } from '../types/tatkal.types'
+
+interface TatkalPrefill {
+  tripId: string
+  tripBookingId?: string
+}
 
 const EVENT_TONE: Record<TatkalNotificationEventType, 'success' | 'danger' | 'warning' | 'brand' | 'neutral'> = {
   reservationOpensSoon: 'brand',
@@ -46,6 +52,8 @@ const PRO_TIPS = [
 ]
 
 export function TatkalPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { data: trips } = useTrips()
   const { data: bookings } = useTripBookings()
   const createMutation = useCreateTatkalPlan()
@@ -55,6 +63,7 @@ export function TatkalPage() {
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TatkalPlan | null>(null)
+  const [prefill, setPrefill] = useState<TatkalPrefill | null>(null)
 
   const tripList = trips ?? []
   const today = todayKey()
@@ -63,9 +72,20 @@ export function TatkalPage() {
     () => buildDueTatkalNotificationEvents({ plans, backupsByPlanId }),
     [plans, backupsByPlanId],
   )
+  // Arriving from "Switch to Tatkal" on the Planning page: open the create
+  // sheet pre-filled with the trip/booking that missed its general window.
+  useEffect(() => {
+    const state = location.state as TatkalPrefill | null
+    if (!state?.tripId) return
+    setEditing(null)
+    setPrefill(state)
+    setSheetOpen(true)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.state, location.pathname, navigate])
 
   function openCreate() {
     setEditing(null)
+    setPrefill(null)
     setSheetOpen(true)
   }
 
@@ -116,36 +136,22 @@ export function TatkalPage() {
 
   const nextWindow = upcomingPlans[0]
 
-  const windowItems = useMemo<TimelineItem[]>(
-    () =>
-      upcomingPlans.map((plan) => {
-        const opensOn = addDays(plan.journeyDate, -1)
-        const trip = tripById.get(plan.tripId)
-        const daysUntil = diffDays(today, opensOn)
-        return {
-          id: plan.id,
-          color: '#C4A6FF',
-          dateBox: { month: formatDisplay(opensOn, 'MMM').toUpperCase(), day: formatDisplay(opensOn, 'D') },
-          label: (
-            <span className="flex items-center gap-2">
-              <span>{trip?.title ?? `${plan.boardingStation} → ${plan.destinationStation}`}</span>
-              <span className="rounded bg-purple/10 px-[6px] py-0.5 font-mono text-[9px] font-bold tracking-[0.5px] text-purple">
-                TATKAL
-              </span>
-            </span>
-          ),
-          sub: (
-            <>
-              {plan.boardingStation} → {plan.destinationStation}
-              <br />
-              <span className="font-sans text-[11.5px] font-semibold text-orange">
-                {daysUntil <= 0 ? 'Opens today' : `${daysUntil} day${daysUntil === 1 ? '' : 's'} away`} ·{' '}
-                {TATKAL_OPEN_TIME[plan.tatkalClass]}
-              </span>
-            </>
-          ),
-        }
-      }),
+  const prefillDefaults = useMemo(() => {
+    if (!prefill) return undefined
+    const linkedBooking = prefill.tripBookingId
+      ? (bookings ?? []).find((b) => b.id === prefill.tripBookingId)
+      : undefined
+    return {
+      tripId: prefill.tripId,
+      tripBookingId: prefill.tripBookingId,
+      boardingStation: linkedBooking?.train?.boardingStation ?? '',
+      destinationStation: linkedBooking?.train?.destinationStation ?? '',
+      journeyDate: linkedBooking?.journeyDate ?? '',
+    }
+  }, [prefill, bookings])
+
+  const windowItems = useMemo(
+    () => upcomingPlans.map((plan) => buildTatkalWindowItem(plan, tripById.get(plan.tripId), today)),
     [upcomingPlans, tripById, today],
   )
 
@@ -319,7 +325,7 @@ export function TatkalPage() {
                   currentRacNumber: editing.currentRacNumber,
                   notes: editing.notes,
                 }
-              : undefined
+              : prefillDefaults
           }
           onSubmit={(values) => void handleSubmit(values)}
           onCancel={() => setSheetOpen(false)}
