@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
@@ -10,6 +10,13 @@ import { pageContainer } from '@/lib/motion'
 
 export function AppShell() {
   const location = useLocation()
+  // Captured per render rather than rendered via `<Outlet />`: AnimatePresence
+  // keeps rendering the exiting page's last element, and `<Outlet />` inside it
+  // would read the *new* route — mounting the next page inside the fading-out
+  // wrapper. A `layoutId` element mounted there (Trips' tab pill, Picks'
+  // filter pill) registers with the exit and never releases it, so the wrapper
+  // sticks at opacity 0 and every later route renders invisibly inside it.
+  const outlet = useOutlet()
 
   return (
     <div className="flex min-h-svh flex-1 bg-bg text-t1">
@@ -27,7 +34,7 @@ export function AppShell() {
               exit={{ opacity: 0, y: -8, transition: { duration: 0.15, ease: [0.4, 0, 1, 1] } }}
             >
               <ErrorBoundary key={location.pathname}>
-                <Outlet />
+                {outlet}
               </ErrorBoundary>
             </motion.div>
           </AnimatePresence>

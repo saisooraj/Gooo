@@ -30,7 +30,12 @@ export function DataLoadErrorBanner() {
   const [retrying, setRetrying] = useState(false)
 
   const subscribe = useCallback((onChange: () => void) => cache.subscribe(onChange), [cache])
-  const hasFailures = useSyncExternalStore(subscribe, () => cache.getAll().some(isFailedDataQuery))
+  // The code is shown on the banner itself: an installed iOS PWA has no
+  // console to check, and "connection" vs "permission" needs different fixes.
+  const failureCode = useSyncExternalStore(subscribe, () => {
+    const failed = cache.getAll().find(isFailedDataQuery)
+    return failed && isFirestoreError(failed.state.error) ? failed.state.error.code : null
+  })
 
   async function retry() {
     setRetrying(true)
@@ -43,7 +48,7 @@ export function DataLoadErrorBanner() {
 
   return (
     <AnimatePresence>
-      {hasFailures && (
+      {failureCode && (
         <motion.div
           role="alert"
           initial={{ opacity: 0, y: -8 }}
@@ -51,9 +56,14 @@ export function DataLoadErrorBanner() {
           exit={{ opacity: 0, y: -8 }}
           className="mb-4 flex items-center justify-between gap-3 rounded-[14px] border border-red/20 bg-red/10 px-4 py-3"
         >
-          <p className="text-[13px] text-t1">
-            Couldn&apos;t load your data. Check your connection and try again.
-          </p>
+          <div>
+            <p className="text-[13px] text-t1">
+              {failureCode === 'unavailable'
+                ? 'Couldn’t reach the server. Check your connection and try again.'
+                : 'Couldn’t load some of your data.'}
+            </p>
+            <p className="mt-0.5 font-mono text-[10px] text-t3">{failureCode}</p>
+          </div>
           <Button size="sm" variant="secondary" onClick={() => void retry()} disabled={retrying} className="shrink-0">
             {retrying ? <Spinner className="h-4 w-4" /> : 'Retry'}
           </Button>
