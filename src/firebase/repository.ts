@@ -4,7 +4,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getDocs,
+  getDocsFromServer,
   onSnapshot,
   query,
   serverTimestamp,
@@ -91,7 +91,12 @@ export class FirestoreRepository<T extends FirestoreDocument> {
 
   async listByUser(userId: string, constraints: QueryConstraint[] = []): Promise<T[]> {
     const q = query(this.collectionRef(), where('userId', '==', userId), ...constraints)
-    const snapshot = await getDocs(q)
+    // Plain `getDocs` resolves with an empty cache-only snapshot (no error)
+    // once Firestore decides it's offline — which happens after a single
+    // failed connect or 10s without one, routinely on flaky mobile data. That
+    // empty list then gets cached as real data. `getDocsFromServer` rejects
+    // with `unavailable` instead, so TanStack Query retries it.
+    const snapshot = await getDocsFromServer(q)
     return snapshot.docs.map((d) => fromSnapshot<T>(d))
   }
 
